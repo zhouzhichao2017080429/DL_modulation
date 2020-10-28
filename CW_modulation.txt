@@ -1,0 +1,102 @@
+import os, shutil
+base_dir = 'E:/modulation'
+train_dir = os.path.join(base_dir, 'train')
+validation_dir = os.path.join(base_dir, 'validation')
+test_dir = os.path.join(base_dir, 'test')
+
+train_2fsk_dir = os.path.join(train_dir, '2fsk')
+train_4fsk_dir = os.path.join(train_dir, '4fsk')
+train_ask_dir = os.path.join(train_dir, 'ask')
+train_bpsk_dir = os.path.join(train_dir, 'bpsk')
+train_DLFM_dir = os.path.join(train_dir, 'DLFM')
+train_qpsk_dir = os.path.join(train_dir, 'qpsk')
+validation_2fsk_dir = os.path.join(validation_dir, '2fsk')
+validation_4fsk_dir = os.path.join(validation_dir, '4fsk')
+validation_ask_dir = os.path.join(validation_dir, 'ask')
+validation_bpsk_dir = os.path.join(validation_dir, 'bpsk')
+validation_DLFM_dir = os.path.join(validation_dir, 'DLFM')
+validation_qpsk_dir = os.path.join(validation_dir, 'qpsk')
+test_2fsk_dir = os.path.join(test_dir, '2fsk')
+test_4fsk_dir = os.path.join(test_dir, '4fsk')
+test_ask_dir = os.path.join(test_dir, 'ask')
+test_bpsk_dir = os.path.join(test_dir, 'bpsk')
+test_DLFM_dir = os.path.join(test_dir, 'DLFM')
+test_qpsk_dir = os.path.join(test_dir, 'qpsk')
+
+from keras.preprocessing.image import ImageDataGenerator
+
+train_datagen = ImageDataGenerator(rescale=1./255) 
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+train_generator = train_datagen.flow_from_directory(
+         train_dir, 
+         target_size=(150, 150), 
+         batch_size=50,
+         class_mode='categorical') 
+validation_generator = test_datagen.flow_from_directory(
+         validation_dir,
+         target_size=(150, 150),
+         batch_size=50,
+         class_mode='categorical')
+
+
+
+from keras import layers
+from keras import models
+model = models.Sequential()
+model.add(layers.Conv2D(32, (3, 3), activation='relu',
+ input_shape=(150, 150, 3)))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(128, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(128, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+
+model.add(layers.Flatten())
+model.add(layers.Dense(512, activation='relu'))
+#model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dense(6, activation='softmax'))
+
+
+
+from keras import optimizers
+model.compile(loss='categorical_crossentropy',
+optimizer=optimizers.RMSprop(lr=1e-5),metrics=['acc'])
+
+
+
+
+history = model.fit_generator(
+ train_generator,
+ steps_per_epoch=120,
+ epochs=50,
+ validation_data=validation_generator,
+ validation_steps=30)
+
+
+
+model.summary
+model.save('minibatch.h5')
+
+
+
+import matplotlib.pyplot as plt
+acc = history.history['acc']
+val_acc = history.history['val_acc']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs = range(1, len(acc) + 1)
+plt.plot(epochs, acc, 'bo', label='Training acc')
+plt.plot(epochs, val_acc, 'b', label='Validation acc')
+plt.title('Training and validation accuracy')
+plt.legend()
+plt.figure()
+plt.plot(epochs, loss, 'bo', label='Training loss')
+plt.plot(epochs, val_loss, 'b', label='Validation loss')
+plt.title('Training and validation loss')
+plt.legend()
+plt.show()
+
+
